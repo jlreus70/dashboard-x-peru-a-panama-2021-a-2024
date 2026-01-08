@@ -1,0 +1,959 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Exportaciones Perú-Panamá | Final v9</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --primary: #D91023; --secondary: #0F2130; --accent: #E6B400; --bg: #F4F7FE; --card-bg: #FFFFFF; --text-main: #2B3674; --text-light: #A3AED0; --success: #05CD99; --danger: #E31A1A; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg); color: var(--text-main); margin: 0; padding: 0; }
+        .sidebar { width: 280px; height: 100vh; background: var(--card-bg); position: fixed; left: 0; top: 0; padding: 30px; box-shadow: 4px 0 20px rgba(0,0,0,0.02); z-index: 100; overflow-y: auto; }
+        .logo { font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 24px; color: var(--secondary); margin-bottom: 50px; display: flex; align-items: center; gap: 10px; }
+        .logo span { color: var(--primary); }
+        .nav-links { list-style: none; padding: 0; }
+        .nav-item { padding: 15px 20px; margin-bottom: 10px; border-radius: 12px; cursor: pointer; color: var(--text-light); font-weight: 500; transition: all 0.3s ease; display: flex; align-items: center; gap: 15px; }
+        .nav-item:hover { background: #F4F7FE; color: var(--secondary); }
+        .nav-item.active { background: var(--secondary); color: white; box-shadow: 0 10px 20px rgba(15, 33, 48, 0.2); }
+        .main-content { margin-left: 280px; padding: 40px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+        .header h2 { font-family: 'Montserrat', sans-serif; font-size: 34px; margin: 0; }
+        .profile-img { width: 50px; height: 50px; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; }
+        .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 25px; margin-bottom: 40px; }
+        .kpi-card { background: var(--card-bg); padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); display: flex; align-items: center; gap: 20px; transition: transform 0.3s ease; }
+        .kpi-card:hover { transform: translateY(-5px); }
+        .kpi-icon { width: 60px; height: 60px; border-radius: 50%; background: #F4F7FE; display: flex; align-items: center; justify-content: center; font-size: 24px; color: var(--primary); }
+        .kpi-info h4 { margin: 0; color: var(--text-light); font-size: 14px; font-weight: 500; }
+        .kpi-info h3 { margin: 5px 0 0; font-size: 24px; font-family: 'Montserrat', sans-serif; color: var(--secondary); }
+        .section { display: none; animation: fadeIn 0.5s ease; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .grid-2 { display: grid; grid-template-columns: 1.5fr 1fr; gap: 30px; margin-bottom: 30px; }
+        .top-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+        .deep-dive-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-bottom: 30px; }
+        .chart-card { background: var(--card-bg); padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); height: 100%; }
+        .chart-header { display: flex; justify-content: space-between; margin-bottom: 20px; }
+        .chart-title { font-size: 18px; font-weight: 700; color: var(--secondary); }
+        .dd-card { background: #fff; border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); position: relative; overflow: hidden; }
+        .dd-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 5px; }
+        .dd-card.stars::before { background: linear-gradient(90deg, #FFD700, #FFA500); }
+        .dd-card.risk::before { background: linear-gradient(90deg, #FF416C, #FF4B2B); }
+        .dd-card.churn::before { background: linear-gradient(90deg, #7F7FD5, #86A8E7); }
+        .dd-icon { font-size: 24px; margin-bottom: 15px; }
+        .dd-title { font-size: 12px; font-weight: 600; color: var(--text-light); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .dd-value { font-size: 20px; font-weight: 700; color: var(--secondary); margin-bottom: 10px; }
+        .dd-list { list-style: none; padding: 0; margin: 0; }
+        .dd-list li { font-size: 12px; color: #555; margin-bottom: 8px; border-bottom: 1px solid #f0f0f0; padding-bottom: 5px; display: flex; justify-content: space-between; }
+        .dd-list li span.growth { color: var(--success); font-weight: 600; }
+        .dd-list li span.loss { color: var(--danger); font-weight: 600; }
+        .strategy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px; }
+        .st-card { background: #fff; border-radius: 20px; padding: 25px; border-left: 5px solid var(--secondary); box-shadow: 0 10px 30px rgba(0,0,0,0.03); }
+        .st-header { font-size: 16px; font-weight: 700; color: var(--secondary); margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+        .st-content p { font-size: 14px; color: #555; line-height: 1.5; margin-bottom: 10px; }
+        .st-content ul { padding-left: 20px; font-size: 13px; color: #555; line-height: 1.5; }
+        .ma-card { background: linear-gradient(135deg, #0F2130 0%, #203a52 100%); color: white; padding: 25px; border-radius: 20px; }
+        .ma-title { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; margin-bottom: 15px; color: var(--accent); }
+        .ma-content ul { list-style: none; padding: 0; font-size: 13px; }
+        .ma-content li { margin-bottom: 8px; display: flex; align-items: flex-start; gap: 8px; opacity: 0.9; }
+        .ma-content li i { color: var(--success); margin-top: 3px; }
+        .insights-container { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 25px; }
+        .insight-box { background: #fff; border-radius: 15px; padding: 20px; border-left: 5px solid var(--secondary); box-shadow: 0 5px 15px rgba(0,0,0,0.03); display: flex; align-items: center; gap: 15px; }
+        .insight-icon { font-size: 20px; color: var(--secondary); min-width: 30px; text-align: center; }
+        .insight-content h5 { margin: 0 0 5px; font-size: 12px; color: var(--text-light); text-transform: uppercase; }
+        .insight-content p { margin: 0; font-size: 13px; color: #555; line-height: 1.4; font-weight: 600; }
+        .table-container { overflow-x: auto; max-height: 400px; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 12px; color: var(--text-light); font-weight: 500; border-bottom: 1px solid #eee; position: sticky; top: 0; background: white; z-index: 10; font-size: 12px; }
+        td { padding: 12px; border-bottom: 1px solid #f4f7fe; font-weight: 600; color: var(--secondary); font-size: 12px; }
+        tr:hover td { background: #F4F7FE; }
+        .rank-col { width: 30px; color: var(--primary); font-weight: 700; }
+
+        /* COMPETITOR CARD */
+        .comp-card { background: #fff; border-radius: 20px; padding: 25px; border-left: 5px solid #E31A1A; box-shadow: 0 10px 30px rgba(0,0,0,0.03); margin-top: 30px; }
+        .comp-header { font-size: 16px; font-weight: 700; color: #E31A1A; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+        .comp-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+        .comp-item { background: #FDF2F2; padding: 15px; border-radius: 12px; }
+        .comp-flag { font-size: 24px; margin-bottom: 5px; }
+        .comp-name { font-weight: 700; color: var(--secondary); margin-bottom: 5px; font-size: 14px; }
+        .comp-desc { font-size: 12px; color: #555; line-height: 1.4; }
+
+        /* GLOSSARY SECTION */
+        .glossary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; }
+        .glossary-card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.03); border-top: 4px solid var(--primary); transition: transform 0.3s; }
+        .glossary-card:hover { transform: translateY(-5px); }
+        .gl-term { font-family: 'Montserrat', sans-serif; font-size: 18px; font-weight: 700; color: var(--secondary); margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .gl-def { font-size: 14px; color: #555; line-height: 1.5; margin-bottom: 15px; }
+        .gl-ex { background: #F4F7FE; padding: 12px; border-radius: 8px; font-size: 13px; color: var(--text-main); border-left: 3px solid var(--accent); }
+        .gl-ex strong { color: var(--secondary); }
+
+        /* CONCLUSIONS SECTION */
+        .conclusions-hero { background: linear-gradient(135deg, #0F2130 0%, #1a3a5c 100%); color: white; padding: 40px; border-radius: 20px; margin-bottom: 30px; position: relative; overflow: hidden; }
+        .conclusions-hero::after { content: '\f0eb'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; right: -20px; bottom: -40px; font-size: 200px; opacity: 0.05; color: white; }
+        .conclusions-hero h3 { font-family: 'Montserrat', sans-serif; font-size: 28px; margin: 0 0 15px 0; color: var(--accent); }
+        .conclusions-hero p { font-size: 16px; opacity: 0.9; max-width: 800px; line-height: 1.6; }
+        .conclusions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .conclusion-card { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); border-top: 5px solid var(--secondary); transition: transform 0.3s ease; }
+        .conclusion-card:hover { transform: translateY(-5px); }
+        .cc-icon { width: 50px; height: 50px; background: #F4F7FE; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--primary); margin-bottom: 20px; }
+        .cc-title { font-family: 'Montserrat', sans-serif; font-size: 18px; font-weight: 700; color: var(--secondary); margin-bottom: 15px; }
+        .cc-text { font-size: 14px; color: #555; line-height: 1.6; }
+        .cc-highlight { background: rgba(217, 16, 35, 0.05); padding: 10px; border-radius: 8px; margin-top: 15px; font-size: 13px; color: var(--primary); font-weight: 600; border-left: 3px solid var(--primary); }
+
+        @media (max-width: 1024px) {
+            .sidebar { width: 80px; padding: 20px 10px; }
+            .logo span, .nav-item span { display: none; }
+            .main-content { margin-left: 80px; }
+            .grid-2, .top-grid, .deep-dive-grid, .strategy-grid, .insights-container, .conclusions-grid, .glossary-grid, .comp-grid { grid-template-columns: 1fr; }
+            .nav-item { justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="logo"><i class="fa-solid fa-chart-simple"></i><span>PromPerú</span></div>
+        <ul class="nav-links">
+            <li class="nav-item active" onclick="showSection('general', this)"><i class="fa-solid fa-house"></i> <span>General</span></li>
+            <li class="nav-item" onclick="showSection('frescos', this)"><i class="fa-solid fa-leaf"></i> <span>Agro Fresco</span></li>
+            <li class="nav-item" onclick="showSection('procesados', this)"><i class="fa-solid fa-jar"></i> <span>Agro Procesado</span></li>
+            <li class="nav-item" onclick="showSection('pesca', this)"><i class="fa-solid fa-fish"></i> <span>Pesca</span></li>
+            <li class="nav-item" onclick="showSection('manufacturas', this)"><i class="fa-solid fa-industry"></i> <span>Manufacturas</span></li>
+            <li class="nav-item" onclick="showSection('quimicos', this)"><i class="fa-solid fa-flask"></i> <span>Químicos</span></li>
+            <li class="nav-item" onclick="showSection('textiles', this)"><i class="fa-solid fa-shirt"></i> <span>Textiles</span></li>
+            <li class="nav-item" onclick="showSection('glosario', this)"><i class="fa-solid fa-book"></i> <span>Glosario</span></li>
+            <li class="nav-item" onclick="showSection('conclusiones', this)"><i class="fa-solid fa-lightbulb"></i> <span>Conclusiones</span></li>
+        </ul>
+    </div>
+
+    <div class="main-content">
+        <div class="header">
+            <div><p>Dashboard Estratégico</p><h2>Exportaciones Perú → Panamá</h2></div>
+            <div class="profile">
+                <div style="text-align: right;"><div style="font-weight: 700; color: var(--secondary);">Juan Luis Reus</div><div style="font-size: 12px; color: var(--text-light);">PromPerú Panamá</div></div>
+                <div class="profile-img">JR</div>
+            </div>
+        </div>
+
+        <!-- GENERAL SECTION -->
+        <div id="general" class="section active">
+            <div class="kpi-grid">
+                <div class="kpi-card"><div class="kpi-icon"><i class="fa-solid fa-sack-dollar"></i></div><div class="kpi-info"><h4>Total FOB (2021-2024)</h4><h3>$2,389.4M</h3></div></div>
+                <div class="kpi-card"><div class="kpi-icon"><i class="fa-solid fa-chart-line"></i></div><div class="kpi-info"><h4>Crecimiento (CAGR)</h4><h3>3.3%</h3></div></div>
+                <div class="kpi-card"><div class="kpi-icon"><i class="fa-solid fa-building"></i></div><div class="kpi-info"><h4>Empresas</h4><h3>1,252</h3></div></div>
+                <div class="kpi-card"><div class="kpi-icon"><i class="fa-solid fa-boxes-stacked"></i></div><div class="kpi-info"><h4>Productos</h4><h3>1,918</h3></div></div>
+            </div>
+            <div class="grid-2">
+                <div class="chart-card"><div class="chart-header"><div class="chart-title">Evolución de Exportaciones (2021-2024)</div></div><div id="chart_evolucion"></div></div>
+                <div class="chart-card"><div class="chart-header"><div class="chart-title">Participación por Sector (2021-2024)</div></div><div id="chart_sectores"></div></div>
+            </div>
+        </div>
+
+        <!-- SECTOR SECTIONS -->
+        
+    <div id="frescos" class="section">
+
+        
+    <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-icon" style="color:#27AE60"><i class="fa-solid fa-sack-dollar"></i></div><div class="kpi-info"><h4>FOB Sector (2021-2024)</h4><h3>$171.4M</h3></div></div>
+        <div class="kpi-card"><div class="kpi-icon" style="color:#27AE60"><i class="fa-solid fa-chart-line"></i></div><div class="kpi-info"><h4>CAGR (2021-2024)</h4><h3>-4.4%</h3></div></div>
+        <div class="kpi-card"><div class="kpi-icon" style="color:#27AE60"><i class="fa-solid fa-building"></i></div><div class="kpi-info"><h4>Empresas</h4><h3>298</h3></div></div>
+        <div class="kpi-card"><div class="kpi-icon" style="color:#27AE60"><i class="fa-solid fa-boxes-stacked"></i></div><div class="kpi-info"><h4>Productos</h4><h3>129</h3></div></div>
+    </div>
+    
+
+        <div class="deep-dive-grid">
+            <div class="dd-card stars">
+                <div class="dd-icon" style="color: #FFD700;"><i class="fa-solid fa-star"></i></div>
+                <div class="dd-title">Empresas Estrella (>100k)</div>
+                <div class="dd-value">5 Cías.</div>
+                <ul class="dd-list"><li>MEBOL SAC <span class='growth'>+5207%</span></li><li>GREEN GOLD PACIFIC S.A.C. <span class='growth'>+2460%</span></li><li>AGROFRUTOS TRADING S.A. <span class='growth'>+1992%</span></li><li>CAMPOSOL S.A. <span class='growth'>+1571%</span></li><li>ARONA TRADING S.A. <span class='growth'>+1369%</span></li></ul>
+            </div>
+            <div class="dd-card risk">
+                <div class="dd-icon" style="color: #FF416C;"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="dd-title">Concentración (CR3)</div>
+                <div class="dd-value">29.7%</div>
+                <ul class="dd-list"><li>Nivel: <strong>🟢 Saludable</strong></li><li>ANDEAN NATURAL PRODUCTS E...</li><li>AGRONEGOCIOS LOS ANGELES ...</li><li>SOCIEDAD AGRICOLA RAPEL  ...</li></ul>
+            </div>
+            <div class="dd-card churn">
+                <div class="dd-icon" style="color: #7F7FD5;"><i class="fa-solid fa-user-minus"></i></div>
+                <div class="dd-title">Fuga de Valor (2024)</div>
+                <div class="dd-value">-$6.5M</div>
+                <ul class="dd-list"><li>Empresas perdidas: <strong>75</strong></li><li>Valor perdido: <span class='loss'>$6.5M</span></li></ul>
+            </div>
+        </div>
+
+        <div class="insights-container">
+            <div class="insight-box" style="border-left-color: #27AE60;">
+                <div class="insight-icon" style="color: #27AE60;"><i class="fa-solid fa-scale-balanced"></i></div>
+                <div class="insight-content"><h5>Precios (2021-2024)</h5><p>🟢 Mejora de Precios (+50.4%)</p></div>
+            </div>
+            <div class="insight-box" style="border-left-color: #27AE60;">
+                <div class="insight-icon" style="color: #27AE60;"><i class="fa-solid fa-handshake"></i></div>
+                <div class="insight-content"><h5>Retención (2021-2024)</h5><p>🟢 Alta Fidelidad (56.2%)</p></div>
+            </div>
+            <div class="insight-box" style="border-left-color: #27AE60;">
+                <div class="insight-icon" style="color: #27AE60;"><i class="fa-solid fa-map-location-dot"></i></div>
+                <div class="insight-content"><h5>Top Región</h5><p>PIURA</p></div>
+            </div>
+        </div>
+
+        <div class="strategy-grid">
+            <div class="st-card" style="border-left-color: #27AE60;">
+                <div class="st-header" style="color: #27AE60;"><i class="fa-solid fa-lightbulb"></i> Insights & Estrategia</div>
+                <div class="st-content">
+                    <p><strong>Análisis:</strong> Panamá es hub de frescos. Calidad peruana reconocida en retail.</p>
+                    <ul><li>Certificaciones Global GAP.</li><li>Empaques retail-ready.</li><li>Cadena de frío estricta.</li></ul>
+                </div>
+            </div>
+            <div class="ma-card">
+                <div class="ma-title"><i class="fa-solid fa-passport"></i> Acceso a Mercado</div>
+                <div class="ma-content">
+                    <ul>
+                        <li><i class="fa-solid fa-check"></i> <strong>Requisitos:</strong> Certificado Fitosanitario (SENASA). Inspección AUPSA.</li>
+                        <li><i class="fa-solid fa-percent"></i> <strong>Aranceles:</strong> Uvas, Paltas, Arándanos: 0% (TLC).</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="comp-card">
+            <div class="comp-header"><i class="fa-solid fa-earth-americas"></i> Radar Competitivo: Top 3 Competidores en Panamá</div>
+            <div class="comp-grid">
+                
+        <div class="comp-item">
+            <div class="comp-flag">🇺🇸</div>
+            <div class="comp-name">Estados Unidos</div>
+            <div class="comp-desc">Dominio en Uvas, Manzanas y Cebollas.</div>
+        </div>
+        
+        <div class="comp-item">
+            <div class="comp-flag">🇨🇱</div>
+            <div class="comp-name">Chile</div>
+            <div class="comp-desc">Líder histórico en frutas de clima templado.</div>
+        </div>
+        
+        <div class="comp-item">
+            <div class="comp-flag">🇨🇷</div>
+            <div class="comp-name">Costa Rica</div>
+            <div class="comp-desc">Cercanía geográfica. Líder en Piña y Banano.</div>
+        </div>
+        
+            </div>
+        </div>
+
+        <div class="chart-card" style="margin-bottom: 30px; margin-top: 30px;">
+            <div class="chart-header"><div class="chart-title">Evolución 2021-2024: Valor vs Volumen</div></div>
+            <div id="chart_frescos_evol" style="height: 300px;"></div>
+        </div>
+
+        <div class="top-grid">
+            <div class="chart-card">
+                <div class="chart-header"><div class="chart-title">🏆 Top 20 Productos (2021-2024)</div></div>
+                <div class="table-container"><table><thead><tr><th class="rank-col">#</th><th>Producto</th><th>FOB</th></tr></thead><tbody><tr><td class='rank-col'>1</td><td>BANANAS FRESCAS TIPO «CAVENDISH VALERY»...</td><td>$72,852,025</td></tr><tr><td class='rank-col'>2</td><td>UVAS FRESCAS...</td><td>$38,722,488</td></tr><tr><td class='rank-col'>3</td><td>LOS DEMÁS LAS DEMÁS SEMILLAS Y FRUTOS OLEAGINOSOS,...</td><td>$20,902,690</td></tr><tr><td class='rank-col'>4</td><td>LIMA TAHITÍ (LIMÓN TAHITÍ) (CITRUS LATIFOLIA)...</td><td>$6,868,519</td></tr><tr><td class='rank-col'>5</td><td>WILKINGS E HÍBRIDOS SIMILARES DE AGRIOS (CÍTRICOS)...</td><td>$5,219,540</td></tr><tr><td class='rank-col'>6</td><td>ARÁNDANOS ROJOS, MIRTILOS Y DEMÁS FRUTOS DEL GÉNER...</td><td>$3,156,709</td></tr><tr><td class='rank-col'>7</td><td>CAFÉ SIN TOSTAR Y SIN DESCAFEINAR EXCEPTO PARA SIE...</td><td>$2,859,581</td></tr><tr><td class='rank-col'>8</td><td>LIMÓN (LIMÓN SUTIL, LIMÓN COMÚN, LIMÓN CRIOLLO) (C...</td><td>$2,470,465</td></tr><tr><td class='rank-col'>9</td><td>FRESAS (FRUTILLAS) SIN ADICIÓN DE AZÚCAR U OTRO ED...</td><td>$2,008,666</td></tr><tr><td class='rank-col'>10</td><td>ESPÁRRAGOS, FRESCOS O REFRIGERADOS...</td><td>$1,889,625</td></tr><tr><td class='rank-col'>11</td><td>FRIJOLES SALVAJES O CAUPÍ EXCEPTO PARA SIEMBRA...</td><td>$1,861,980</td></tr><tr><td class='rank-col'>12</td><td>NARANJAS , FRESCAS O SECAS...</td><td>$1,540,993</td></tr><tr><td class='rank-col'>13</td><td>MANGOS Y MANGOSTANES, FRESCOS O SECOS...</td><td>$1,505,274</td></tr><tr><td class='rank-col'>14</td><td>ORÉGANO (ORIGANUM VULGARE)...</td><td>$1,232,936</td></tr><tr><td class='rank-col'>15</td><td>PALLARES (PHASEOLUS LUNATUS) EXCEPTO PARA SIEMBRA...</td><td>$1,077,222</td></tr><tr><td class='rank-col'>16</td><td>ARVEJAS (GUISANTES, CHÍCHAROS) DE PALO, GANDÚ O GA...</td><td>$1,065,938</td></tr><tr><td class='rank-col'>17</td><td>MANDARINAS (INCLUIDAS LAS TANGERINAS Y SATSUMAS)...</td><td>$1,047,132</td></tr><tr><td class='rank-col'>18</td><td>AGUACATES (PALTAS) , FRESCAS O SECAS...</td><td>$624,045</td></tr><tr><td class='rank-col'>19</td><td>QUINUA (QUINOA) (CHENOPODIUM QUINOA) EXCEPTO PARA ...</td><td>$520,695</td></tr><tr><td class='rank-col'>20</td><td>TARA EN POLVO (CAESALPINEA SPINOSA)...</td><td>$437,623</td></tr></tbody></table></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><div class="chart-title">🏢 Top 20 Exportadores (2021-2024)</div></div>
+                <div class="table-container"><table><thead><tr><th class="rank-col">#</th><th>Empresa</th><th>FOB</th></tr></thead><tbody><tr><td class='rank-col'>1</td><td>ANDEAN NATURAL PRODUCTS EXPORT IMPO</td><td>$23,966,682</td></tr><tr><td class='rank-col'>2</td><td>AGRONEGOCIOS LOS ANGELES S.A.C.</td><td>$17,766,675</td></tr><tr><td class='rank-col'>3</td><td>SOCIEDAD AGRICOLA RAPEL   S.A.C.</td><td>$9,187,645</td></tr><tr><td class='rank-col'>4</td><td>AGROPECUARIA SAN PEDRO S.A.</td><td>$7,317,171</td></tr><tr><td class='rank-col'>5</td><td>COOPERATIVA AGRARIA DE PRODUCTORES </td><td>$4,858,326</td></tr><tr><td class='rank-col'>6</td><td>PROCESADORA LARAN SAC</td><td>$4,652,589</td></tr><tr><td class='rank-col'>7</td><td>AGRICOLA SAN CEFERINO S.A.</td><td>$4,633,566</td></tr><tr><td class='rank-col'>8</td><td>COOPERATIVA AGRARIA DE PRODUCTORES </td><td>$3,712,157</td></tr><tr><td class='rank-col'>9</td><td>LAPACHO S.A.</td><td>$3,455,985</td></tr><tr><td class='rank-col'>10</td><td>COOPERATIVA AGRARIA PUEBLO NUEVO HU</td><td>$3,334,692</td></tr><tr><td class='rank-col'>11</td><td>GEALE AGROTRADING E.I.R.L.</td><td>$3,313,671</td></tr><tr><td class='rank-col'>12</td><td>COMPLEJO AGROINDUSTRIAL BETA S.A.</td><td>$3,155,495</td></tr><tr><td class='rank-col'>13</td><td>COOPERATIVA AGRARIA DE BANANEROS OR</td><td>$2,853,774</td></tr><tr><td class='rank-col'>14</td><td>AGROPECUARIA SAN FRANCISCO SA</td><td>$2,766,600</td></tr><tr><td class='rank-col'>15</td><td>AGROEXPORTADORA DON ELOY SOCIEDAD A</td><td>$2,670,528</td></tr><tr><td class='rank-col'>16</td><td>AGRICOLA LA LUCIA S.A.</td><td>$2,512,153</td></tr><tr><td class='rank-col'>17</td><td>ORGANICOS RIO VERDE S.A.C.</td><td>$2,432,352</td></tr><tr><td class='rank-col'>18</td><td>ECOSAC AGRICOLA S.A.C.</td><td>$2,373,025</td></tr><tr><td class='rank-col'>19</td><td>POLAR FRUIT INTERNATIONAL S.A.C.</td><td>$2,284,931</td></tr><tr><td class='rank-col'>20</td><td>INVERSIONES AGRICOLAS INKA BANANA S</td><td>$2,262,624</td></tr></tbody></table></div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="chart-card">
+                <div class="chart-header"><div class="chart-title">🗺️ Top Regiones (2021-2024)</div></div>
+                <div class="table-container"><table><thead><tr><th class="rank-col">#</th><th>Departamento</th><th>FOB</th></tr></thead><tbody><tr><td class='rank-col'>1</td><td>PIURA</td><td>$104,394,575</td></tr><tr><td class='rank-col'>2</td><td>ICA</td><td>$31,255,793</td></tr><tr><td class='rank-col'>3</td><td>LIMA METROPOLITANA</td><td>$8,021,022</td></tr><tr><td class='rank-col'>4</td><td>LAMBAYEQUE</td><td>$6,824,447</td></tr><tr><td class='rank-col'>5</td><td>LIMA REGIÓN</td><td>$3,712,759</td></tr></tbody></table></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="procesados" class="section">
+
+        
+    <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-icon" style="color:#F39C12"><i class="fa-solid fa-sack-dollar"></i></div><div class="kpi-info"><h4>FOB Sector (2021-2024)</h4><h3>$90.1M</h3></div></div>
+        <div class="kpi-card"><div class="kpi-icon" style="color:#F39C12"><i class="fa-solid fa-chart-line"></i></div><div class="kpi-info"><h4>CAGR (2021-2024)</h4><h3>18.2%</h3></div></div>
+        <div class="kpi-card"><div class="kpi-icon" style="color:#F39C12"><i class="fa-solid fa-building"></i></div><div class="kpi-info"><h4>Empresas</h4><h3>110</h3></div></div>
+        <div class="kpi-card"><div class="kpi-icon" style="color:#F39C12"><i class="fa-solid fa-boxes-stacked"></i></div><div class="kpi-info"><h4>Productos</h4><h3>109</h3></div></div>
+    </div>
+    
+
+        <div class="deep-dive-grid">
+            <div class="dd-card stars">
+                <div class="dd-icon" style="color: #FFD700;"><i class="fa-solid fa-star"></i></div>
+                <div class="dd-title">Empresas Estrella (>100k)</div>
+                <div class="dd-value">5 Cías.</div>
+                <ul class="dd-list"><li>NEW FUTURE MULTISERVICIOS S.A.C. <span class='growth'>+2340%</span></li><li>VALLE FERTIL S.A.C. <span class='growth'>+2084%</span></li><li>LECHE GLORIA SOCIEDAD ANONIMA - GLO <span class='growth'>+707%</span></li><li>INVERSIONES MOVILES DEL PERU E.I.R. <span class='growth'>+547%</span></li><li>AGROINDUSTRIAS NOBEX S.A. <span class='growth'>+222%</span></li></ul>
+            </div>
+            <div class="dd-card risk">
+                <div class="dd-icon" style="color: #FF416C;"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="dd-title">Concentración (CR3)</div>
+                <div class="dd-value">48.0%</div>
+                <ul class="dd-list"><li>Nivel: <strong>🟢 Saludable</strong></li><li>VITAPRO S.A....</li><li>MONDELEZ PERU S.A....</li><li>AJINOMOTO DEL PERU S A...</li></ul>
+            </div>
+            <div class="dd-card churn">
+                <div class="dd-icon" style="color: #7F7FD5;"><i class="fa-solid fa-user-minus"></i></div>
+                <div class="dd-title">Fuga de Valor (2024)</div>
+                <div class="dd-value">-$1.2M</div>
+                <ul class="dd-list"><li>Empresas perdidas: <strong>15</strong></li><li>Valor perdido: <span class='loss'>$1.2M</span></li></ul>
+            </div>
+        </div>
+
+        <div class="insights-container">
+            <div class="insight-box" style="border-left-color: #F39C12;">
+                <div class="insight-icon" style="color: #F39C12;"><i class="fa-solid fa-scale-balanced"></i></div>
+                <div class="insight-content"><h5>Precios (2021-2024)</h5><p>🟢 Mejora de Precios (+41.0%)</p></div>
+            </div>
+            <div class="insight-box" style="border-left-color: #F39C12;">
+                <div class="insight-icon" style="color: #F39C12;"><i class="fa-solid fa-handshake"></i></div>
+                <div class="insight-content"><h5>Retención (2021-2024)</h5><p>🟢 Alta Fidelidad (71.1%)</p></div>
+            </div>
+            <div class="insight-box" style="border-left-color: #F39C12;">
+                <div class="insight-icon" style="color: #F39C12;"><i class="fa-solid fa-map-location-dot"></i></div>
+                <div class="insight-content"><h5>Top Región</h5><p>LIMA METROPOLITANA</p></div>
+            </div>
+        </div>
+
+        <div class="strategy-grid">
+            <div class="st-card" style="border-left-color: #F39C12;">
+                <div class="st-header" style="color: #F39C12;"><i class="fa-solid fa-lightbulb"></i> Insights & Estrategia</div>
+                <div class="st-content">
+                    <p><strong>Análisis:</strong> Tendencia Healthy & Convenience. Oportunidad en snacks.</p>
+                    <ul><li>Registro AUPSA anticipado.</li><li>Etiquetado norma RTCA.</li><li>Nicho gourmet/HORECA.</li></ul>
+                </div>
+            </div>
+            <div class="ma-card">
+                <div class="ma-title"><i class="fa-solid fa-passport"></i> Acceso a Mercado</div>
+                <div class="ma-content">
+                    <ul>
+                        <li><i class="fa-solid fa-check"></i> <strong>Requisitos:</strong> Registro Sanitario AUPSA (Obligatorio).</li>
+                        <li><i class="fa-solid fa-percent"></i> <strong>Aranceles:</strong> Conservas, Salsas: 0% (TLC).</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="comp-card">
+            <div class="comp-header"><i class="fa-solid fa-earth-americas"></i> Radar Competitivo: Top 3 Competidores en Panamá</div>
+            <div class="comp-grid">
+                
+        <div class="comp-item">
+            <div class="comp-flag">🇺🇸</div>
+            <div class="comp-name">Estados Unidos</div>
+            <div class="comp-desc">Marcas globales (Heinz, Kraft).</div>
+        </div>
+        
+        <div class="comp-item">
+            <div class="comp-flag">🇨🇷</div>
+            <div class="comp-name">Costa Rica</div>
+            <div class="comp-desc">Salsas y jugos (Dos Pinos).</div>
+        </div>
+        
+        <div class="comp-item">
+            <div class="comp-flag">🇨🇴</div>
+            <div class="comp-name">Colombia</div>
+            <div class="comp-desc">Confitería y café procesado.</div>
+        </div>
+        
+            </div>
+        </div>
+
+        <div class="chart-card" style="margin-bottom: 30px; margin-top: 30px;">
+            <div class="chart-header"><div class="chart-title">Evolución 2021-2024: Valor vs Volumen</div></div>
+            <div id="chart_procesados_evol" style="height: 300px;"></div>
+        </div>
+
+        <div class="top-grid">
+            <div class="chart-card">
+                <div class="chart-header"><div class="chart-title">🏆 Top 20 Productos (2021-2024)</div></div>
+                <div class="table-container"><table><thead><tr><th class="rank-col">#</th><th>Producto</th><th>FOB</th></tr></thead><tbody><tr><td class='rank-col'>1</td><td>DEMÁS PREPARACIONES UTILIZADAS PARA LA ALIMENTACIÓ...</td><td>$16,509,737</td></tr><tr><td class='rank-col'>2</td><td>DEMÁS PASTAS ALIMENTICIAS SIN COCER, RELLENAR NI P...</td><td>$14,632,091</td></tr><tr><td class='rank-col'>3</td><td>GALLETAS DULCES (CON ADICIÓN DE EDULCORANTE)...</td><td>$12,597,985</td></tr><tr><td class='rank-col'>4</td><td>PREPARACIONES PARA SOPAS, POTAJES O CALDOS...</td><td>$11,700,054</td></tr><tr><td class='rank-col'>5</td><td>GALLETAS SALADAS O AROMATIZADAS...</td><td>$9,770,850</td></tr><tr><td class='rank-col'>6</td><td>LAS DEMÁS HORTALIZAS Y LAS MEZCLAS DE HORTALIZAS E...</td><td>$6,585,765</td></tr><tr><td class='rank-col'>7</td><td>LAS DEMÁS COMPLEMENTOS Y SUPLEMENTOS ALIMENTICIOS...</td><td>$1,359,159</td></tr><tr><td class='rank-col'>8</td><td>DEMÁS CHOCOLATE Y PREPARACIONES ALIMENTICIAS QUE C...</td><td>$1,274,722</td></tr><tr><td class='rank-col'>9</td><td>POLVOS PARA LA PREPARACIÓN DE BUDINES, CREMAS, HEL...</td><td>$1,173,724</td></tr><tr><td class='rank-col'>10</td><td>LOS DEMÁS ACEITE DE SOJA (SOYA) Y SUS FRACCIONES, ...</td><td>$1,158,300</td></tr><tr><td class='rank-col'>11</td><td>LOS DEMÁS TOMATES PREPARADOS O CONSERVADOS (EXCEPT...</td><td>$762,150</td></tr><tr><td class='rank-col'>12</td><td>PRODUCTOS DE PANADERÍA, PASTELERÍA O GALLETERÍA, I...</td><td>$698,122</td></tr><tr><td class='rank-col'>13</td><td>PRODUCTOS A BASE DE CEREALES, OBTENIDOS POR INFLAD...</td><td>$594,312</td></tr><tr><td class='rank-col'>14</td><td>CACAO EN POLVO SIN ADICIÓN DE AZÚCAR NI OTRO EDULC...</td><td>$549,633</td></tr><tr><td class='rank-col'>15</td><td>HORTALIZAS, FRUTAS U OTROS FRUTOS O SUS CORTEZAS Y...</td><td>$547,726</td></tr><tr><td class='rank-col'>16</td><td>GRASAS Y ACEITES, VEGETALES, Y SUS FRACCIONES, PAR...</td><td>$517,116</td></tr><tr><td class='rank-col'>17</td><td>ALCACHOFAS (ALCAUCILES)...</td><td>$467,666</td></tr><tr><td class='rank-col'>18</td><td>DEMÁS ARTÍCULOS DE CONFITERÍA SIN CACAO (INCLUSO C...</td><td>$457,962</td></tr><tr><td class='rank-col'>19</td><td>MEZCLAS Y PASTAS PARA LA PREPARACIÓN DE PRODUCTOS ...</td><td>$403,640</td></tr><tr><td class='rank-col'>20</td><td>CHOCOLATES Y SUS PREPARACIONES EN BLOQUES. TABLETA...</td><td>$398,850</td></tr></tbody></table></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><div class="chart-title">🏢 Top 20 Exportadores (2021-2024)</div></div>
+                <div class="table-container"><table><thead><tr><th class="rank-col">#</th><th>Empresa</th><th>FOB</th></tr></thead><tbody><tr><td class='rank-col'>1</td><td>VITAPRO S.A.</td><td>$16,476,189</td></tr><tr><td class='rank-col'>2</td><td>MONDELEZ PERU S.A.</td><td>$15,111,229</td></tr><tr><td class='rank-col'>3</td><td>AJINOMOTO DEL PERU S A</td><td>$11,682,271</td></tr><tr><td class='rank-col'>4</td><td>AGROINDUSTRIA SANTA MARIA S.A.C.</td><td>$7,790,847</td></tr><tr><td class='rank-col'>5</td><td>PANADERIA SAN JORGE S A</td><td>$6,904,071</td></tr><tr><td class='rank-col'>6</td><td>V & F SAC</td><td>$3,505,859</td></tr><tr><td class='rank-col'>7</td><td>MOLINO EL TRIUNFO S A</td><td>$3,351,709</td></tr><tr><td class='rank-col'>8</td><td>ALICORP SAA</td><td>$2,439,278</td></tr><tr><td class='rank-col'>9</td><td>ALPES CHICLAYO SAC</td><td>$2,335,588</td></tr><tr><td class='rank-col'>10</td><td>MACHU PICCHU FOODS S.A.C.</td><td>$2,087,126</td></tr><tr><td class='rank-col'>11</td><td>GRUPO LA PATRONA S.A.C.</td><td>$1,544,400</td></tr><tr><td class='rank-col'>12</td><td>BAKELS PERU S.A.C.</td><td>$1,494,935</td></tr><tr><td class='rank-col'>13</td><td>FUXION BIOTECH S.A.C.</td><td>$1,347,639</td></tr><tr><td class='rank-col'>14</td><td>MOLITALIA S.A</td><td>$996,537</td></tr><tr><td class='rank-col'>15</td><td>COMPAÑIA MOLINERA DEL CENTRO S.A./C</td><td>$923,728</td></tr><tr><td class='rank-col'>16</td><td>ICATOM S.A.</td><td>$762,150</td></tr><tr><td class='rank-col'>17</td><td>PRODUCTOS EXTRAGEL Y UNIVERSAL S.A.</td><td>$576,856</td></tr><tr><td class='rank-col'>18</td><td>HERSIL S.A.C. LABORATORIOS INDUSTRI</td><td>$556,099</td></tr><tr><td class='rank-col'>19</td><td>DANPER TRUJILLO S.A.C.</td><td>$537,040</td></tr><tr><td class='rank-col'>20</td><td>INDUSTRIAS DEL ESPINO S.A.</td><td>$517,116</td></tr></tbody></table></div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="chart-card">
+                <div class="chart-header"><div class="chart-title">🗺️ Top Regiones (2021-2024)</div></div>
+                <div class="table-container"><table><thead><tr><th class="rank-col">#</th><th>Departamento</th><th>FOB</th></tr></thead><tbody><tr><td class='rank-col'>1</td><td>LIMA METROPOLITANA</td><td>$45,460,959</td></tr><tr><td class='rank-col'>2</td><td>CALLAO</td><td>$20,432,600</td></tr><tr><td class='rank-col'>3</td><td>LA LIBERTAD</td><td>$13,342,871</td></tr><tr><td class='rank-col'>4</td><td>LAMBAYEQUE</td><td>$6,761,820</td></tr><tr><td class='rank-col'>5</td><td>ICA</td><td>$1,542,283</td></tr></tbody></table></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="pesca" class="section">
+
+        
+    <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-icon" style="color:#0077be"><i class="fa-solid fa-sack-dollar"></i></div><div class="kpi-info"><h4>FOB Sector (2021-2024)</h4><h3>$32.3M</h3></div></div>
+        <div class="kpi-card"><div class="kpi-icon" style="color:#0077be"><i class="fa-solid fa-chart-line"></i></div><div class="kpi-info"><h4>CAGR (2021-2024)</h4><h3>7.8%</h3></div></div>
+        <div class="kpi-card"><div class="kpi-icon" style="color:#0077be"><i class="fa-solid fa-building"></i></div><div class="kpi-info"><h4>Empresas</h4><h3>47</h3></div></div>
+        <div class="kpi-card"><div class="kpi-icon" style="color:#0077be"><i class="fa-solid fa-boxes-stacked"></i></div><div class="kpi-info"><h4>Productos</h4><h3>20</h3></div></div>
+    </div>
+    
+
+        <div class="deep-dive-grid">
+            <div class="dd-card stars">
+                <div class="dd-icon" style="color: #FFD700;"><i class="fa-solid fa-star"></i></div>
+                <div class="dd-title">Empresas Estrella (>100k)</div>
+                <div class="dd-value">5 Cías.</div>
+                <ul class="dd-list"><li>BUSINESS FISH SANTA RITA S.A.C. <span class='growth'>+448%</span></li><li>CORPORACION ISLA BLANCA S.A.C. <span class='growth'>+405%</span></li><li>THAXU EXPORT SOCIEDAD ANONIMA CERRA <span class='growth'>+392%</span></li><li>PACIFIC FREEZING COMPANY S.A.C. <span class='growth'>+195%</span></li><li>BORAL S.A.C. <span class='growth'>+185%</span></li></ul>
+            </div>
+            <div class="dd-card risk">
+                <div class="dd-icon" style="color: #FF416C;"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="dd-title">Concentración (CR3)</div>
+                <div class="dd-value">48.2%</div>
+                <ul class="dd-list"><li>Nivel: <strong>🟢 Saludable</strong></li><li>CORPORACION PESQUERA APOL...</li><li>MARINASOL S.A....</li><li>BUSINESS FISH SANTA RITA ...</li></ul>
+            </div>
+            <div class="dd-card churn">
+                <div class="dd-icon" style="color: #7F7FD5;"><i class="fa-solid fa-user-minus"></i></div>
+                <div class="dd-title">Fuga de Valor (2024)</div>
+                <div class="dd-value">-$1.3M</div>
+                <ul class="dd-list"><li>Empresas perdidas: <strong>11</strong></li><li>Valor perdido: <span class='loss'>$1.3M</span></li></ul>
+            </div>
+        </div>
+
+        <div class="insights-container">
+            <div class="insight-box" style="border-left-color: #0077be;">
+                <div class="insight-icon" style="color: #0077be;"><i class="fa-solid fa-scale-balanced"></i></div>
+                <div class="insight-content"><h5>Precios (2021-2024)</h5><p>🟡 Precios Estables (4.0%)</p></div>
+            </div>
+            <div class="insight-box" style="border-left-color: #0077be;">
+                <div class="insight-icon" style="color: #0077be;"><i class="fa-solid fa-handshake"></i></div>
+                <div class="insight-content"><h5>Retención (2021-2024)</h5><p>🟢 Alta Fidelidad (58.9%)</p></div>
+            </div>
+            <div class="insight-box" style="border-left-color: #0077be;">
+                <div class="insight-icon" style="color: #0077be;"><i class="fa-solid fa-map-location-dot"></i></div>
+                <div class="insight-content"><h5>Top Región</h5><p>ANCASH</p></div>
+            </div>
+        </div>
+
+        <div class="strategy-grid">
+            <div class="st-card" style="border-left-color: #0077be;">
+                <div class="st-header" style="color: #0077be;"><i class="fa-solid fa-lightbulb"></i> Insights & Estrategia</div>
+                <div class="st-content">
+                    <p><strong>Análisis:</strong> Alto consumo de mariscos. Canal HORECA es clave.</p>
+                    <ul><li>Venta directa a hoteles.</li><li>Valor agregado (filetes).</li><li>Certificaciones MSC.</li></ul>
+                </div>
+            </div>
+            <div class="ma-card">
+                <div class="ma-title"><i class="fa-solid fa-passport"></i> Acceso a Mercado</div>
+                <div class="ma-content">
+                    <ul>
+                        <li><i class="fa-solid fa-check"></i> <strong>Requisitos:</strong> Certificado SANIPES. Planta habilitada.</li>
+                        <li><i class="fa-solid fa-percent"></i> <strong>Aranceles:</strong> Pescado Fresco/Congelado: 0%.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="comp-card">
+            <div class="comp-header"><i class="fa-solid fa-earth-americas"></i> Radar Competitivo: Top 3 Competidores en Panamá</div>
+            <div class="comp-grid">
+                
+        <div class="comp-item">
+            <div class="comp-flag">🇪🇨</div>
+            <div class="comp-name">Ecuador</div>
+            <div class="comp-desc">Gigante mundial del Camarón y Atún.</div>
+        </div>
+        
+        <div class="comp-item">
+            <div class="comp-flag">🇨🇳</div>
+            <div class="comp-name">China</div>
+            <div class="comp-desc">Tilapia y mariscos congelados de bajo costo.</div>
+        </div>
+        
+        <div class="comp-item">
+            <div class="comp-flag">🇨🇱</div>
+            <div class="comp-name">Chile</div>
+            <div class="comp-desc">Salmón y choritos.</div>
+        </div>
+        
+            </div>
+        </div>
+
+        <div class="chart-card" style="margin-bottom: 30px; margin-top: 30px;">
+            <div class="chart-header"><div class="chart-title">Evolución 2021-2024: Valor vs Volumen</div></div>
+            <div id="chart_pesca_evol" style="height: 300px;"></div>
+        </div>
+
+        <div class="top-grid">
+            <div class="chart-card">
+                <div class="chart-header"><div class="chart-title">🏆 Top 20 Productos (2021-2024)</div></div>
+                <div class="table-container"><table><thead><tr><th class="rank-col">#</th><th>Producto</th><th>FOB</th></tr></thead><tbody><tr><td class='rank-col'>1</td><td>DEMÁS PREPARACIONES Y CONSERVAS DE PESCADO...</td><td>$14,213,494</td></tr><tr><td class='rank-col'>2</td><td>JIBIAS (SEPIAS)* Y GLOBITOS; CALAMARES Y POTAS CON...</td><td>$8,789,806</td></tr><tr><td class='rank-col'>3</td><td>COLAS DE LANGOSTINO ,SIN CAPARAZÓN, CONGELADOS...</td><td>$4,105,629</td></tr><tr><td class='rank-col'>4</td><td>ATUNES ENTERO O EN TROZOS , EXCEPTO PICADO...</td><td>$1,768,375</td></tr><tr><td class='rank-col'>5</td><td>LISTADOS Y BONITOS ENTEROS O EN TROZOS...</td><td>$943,659</td></tr><tr><td class='rank-col'>6</td><td>LANGOSTINOS ENTEROS CONGELADOS...</td><td>$630,614</td></tr><tr><td class='rank-col'>7</td><td>CABALLAS (SCOMBER SCOMBRUS, SCOMBER AUSTRALASICUS,...</td><td>$394,901</td></tr><tr><td class='rank-col'>8</td><td>JIBIAS (SEPIAS)*, GLOBITOS, CALAMARES Y POTAS PREC...</td><td>$314,214</td></tr><tr><td class='rank-col'>9</td><td>PULPOS (OCTOPUS SPP) CONGELADOS...</td><td>$283,745</td></tr><tr><td class='rank-col'>10</td><td>JIBIAS, GLOBITOS, CALAMARES Y POTAS EXCEPTO CONGEL...</td><td>$233,176</td></tr><tr><td class='rank-col'>11</td><td>TRUCHAS (SALMO TRUTTA, ONCORHYNCHUS MYKISS, ONCORH...</td><td>$187,441</td></tr><tr><td class='rank-col'>12</td><td>PREPARACIONES Y CONSERVAS DE SARDINAS EN SALSA DE ...</td><td>$140,562</td></tr><tr><td class='rank-col'>13</td><td>PREPARACIONES Y CONSERVAS DE CABALLAS ENTERO O EN ...</td><td>$128,500</td></tr><tr><td class='rank-col'>14</td><td>CABALLAS DE LA INDIA (RASTRELLIGER SPP.), CARITES ...</td><td>$49,644</td></tr><tr><td class='rank-col'>15</td><td>ALMEJAS, BERBERECHOS Y ARCAS EXCEPTO CONGELADOS, V...</td><td>$42,920</td></tr><tr><td class='rank-col'>16</td><td>LISTADOS O BONITOS DE VIENTRE RAYADO CONGELADOS, E...</td><td>$40,904</td></tr><tr><td class='rank-col'>17</td><td>DEMÁS PREPARACIONES Y CONSERVAS DE PESCADO ENTERO ...</td><td>$38,610</td></tr><tr><td class='rank-col'>18</td><td>COLAS DE LANGOSTINOS CONGELADAS, CON CAPARAZÓN, SI...</td><td>$14,330</td></tr><tr><td class='rank-col'>19</td><td>CABEZAS, COLAS, VEJIGAS NATATORIAS Y DEMÁS DESPOJO...</td><td>$2,300</td></tr><tr><td class='rank-col'>20</td><td>LOS DEMÁS EXCEPTO LOS HÍGADOS, HUEVAS Y LECHAS DE ...</td><td>$587</td></tr></tbody></table></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><div class="chart-title">🏢 Top 20 Exportadores (2021-2024)</div></div>
+                <div class="table-container"><table><thead><tr><th class="rank-col">#</th><th>Empresa</th><th>FOB</th></tr></thead><tbody><tr><td class='rank-col'>1</td><td>CORPORACION PESQUERA APOLO SAC</td><td>$7,188,781</td></tr><tr><td class='rank-col'>2</td><td>MARINASOL S.A.</td><td>$4,571,583</td></tr><tr><td class='rank-col'>3</td><td>BUSINESS FISH SANTA RITA S.A.C.</td><td>$3,819,672</td></tr><tr><td class='rank-col'>4</td><td>INVERSIONES Y COMERCIO INTERNACIONA</td><td>$3,468,286</td></tr><tr><td class='rank-col'>5</td><td>MARFRIO PERU S.A.</td><td>$1,886,190</td></tr><tr><td class='rank-col'>6</td><td>INVERSIONES KATHYMAR S.A.C.</td><td>$1,494,990</td></tr><tr><td class='rank-col'>7</td><td>GOLSEM EXPORT FOODS E.I.R.L.</td><td>$1,374,822</td></tr><tr><td class='rank-col'>8</td><td>BORAL S.A.C.</td><td>$910,510</td></tr><tr><td class='rank-col'>9</td><td>CORPORACION PESQUERA DEL MAR SOCIED</td><td>$720,526</td></tr><tr><td class='rank-col'>10</td><td>PACIFIC FREEZING COMPANY S.A.C.</td><td>$717,459</td></tr><tr><td class='rank-col'>11</td><td>MEGUI INVESTMENT S.A.C.</td><td>$701,235</td></tr><tr><td class='rank-col'>12</td><td>SEAFROST S.A.C.</td><td>$646,367</td></tr><tr><td class='rank-col'>13</td><td>THAXU EXPORT SOCIEDAD ANONIMA CERRA</td><td>$589,529</td></tr><tr><td class='rank-col'>14</td><td>INVERSIONES NEZMAN S.A.C.</td><td>$500,147</td></tr><tr><td class='rank-col'>15</td><td>CORPORACION ISLA BLANCA S.A.C.</td><td>$413,100</td></tr><tr><td class='rank-col'>16</td><td>PERUVIAN SEA FOOD S.A.</td><td>$297,556</td></tr><tr><td class='rank-col'>17</td><td>ALTAMAR FOODS PERU S.R.L.</td><td>$295,757</td></tr><tr><td class='rank-col'>18</td><td>PESQUERA MORROSAMA SOCIEDAD ANONIMA</td><td>$251,620</td></tr><tr><td class='rank-col'>19</td><td>INDUSTRIAS PERUANAS SOTO ARCE E.I.R</td><td>$231,940</td></tr><tr><td class='rank-col'>20</td><td>PESQUERA EXALMAR S.A.A.</td><td>$208,968</td></tr></tbody></table></div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="chart-card">
+                <div class="chart-header"><div class="chart-title">🗺️ Top Regiones (2021-2024)</div></div>
+                <div class="table-container"><table><thead><tr><th class="rank-col">#</th><th>Departamento</th><th>FOB</th></tr></thead><tbody><tr><td class='rank-col'>1</td><td>ANCASH</td><td>$14,831,380</td></tr><tr><td class='rank-col'>2</td><td>PIURA</td><td>$8,478,684</td></tr><tr><td class='rank-col'>3</td><td>TUMBES</td><td>$4,571,583</td></tr><tr><td class='rank-col'>4</td><td>LIMA METROPOLITANA</td><td>$2,230,433</td></tr><tr><td class='rank-col'>5</td><td>CALLAO</td><td>$1,379,624</td></tr></tbody></table></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="manufacturas" class="section">
+
+        
+    <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-icon" style="color:#3498DB"><i class="fa-solid fa-sack-dollar"></i></div><div class="kpi-info"><h4>FOB Sector (2021-2024)</h4><h3>$199.3M</h3></div></div>
+        <div class="kpi-card"><div class="kpi-icon" style="color:#3498DB"><i class="fa-solid fa-chart-line"></i></div><div class="kpi-info"><h4>CAGR (2021-2024)</h4><h3>7.5%</h3></div></div>
+        <div class="kpi-card"><div class="kpi-icon" style="color:#3498DB"><i class="fa-solid fa-building"></i></div><div class="kpi-info"><h4>Empresas</h4><h3>678</h3></div></div>
+        <div class="kpi-card"><div class="kpi-icon" style="color:#3498DB"><i class="fa-solid fa-boxes-stacked"></i></div><div class="kpi-info"><h4>Productos</h4><h3>1140</h3></div></div>
+    </div>
+    
+
+        <div class="deep-dive-grid">
+            <div class="dd-card stars">
+                <div class="dd-icon" style="color: #FFD700;"><i class="fa-solid fa-star"></i></div>
+                <div class="dd-title">Empresas Estrella (>100k)</div>
+                <div class="dd-value">5 Cías.</div>
+                <ul class="dd-list"><li>METROCOLOR S.A. <span class='growth'>+20022%</span></li><li>INDUSTRIAS ROLLAVEL SOCIEDAD ANONIM <span class='growth'>+3898%</span></li><li>H. BRIONES SISTEMAS ELECTRICOS DEL  <span class='growth'>+1292%</span></li><li>RESINPLAST S.A. <span class='growth'>+997%</span></li><li>EMBAJADA DE LOS ESTADOS UNIDOS AMER <span class='growth'>+864%</span></li></ul>
+            </div>
+            <div class="dd-card risk">
+                <div class="dd-icon" style="color: #FF416C;"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="dd-title">Concentración (CR3)</div>
+                <div class="dd-value">21.5%</div>
+                <ul class="dd-list"><li>Nivel: <strong>🟢 Saludable</strong></li><li>EMUSA PERU S.A.C....</li><li>SAN MIGUEL INDUSTRIAS PET...</li><li>MOTORES DIESEL ANDINOS S....</li></ul>
+            </div>
+            <div class="dd-card churn">
+                <div class="dd-icon" style="color: #7F7FD5;"><i class="fa-solid fa-user-minus"></i></div>
+                <div class="dd-title">Fuga de Valor (2024)</div>
+                <div class="dd-value">-$6.9M</div>
+                <ul class="dd-list"><li>Empresas perdidas: <strong>170</strong></li><li>Valor perdido: <span class='loss'>$6.9M</span></li></ul>
+            </div>
+        </div>
+
+        <div class="insights-container">
+            <div class="insight-box" style="border-left-color: #3498DB;">
+                <div class="insight-icon" style="color: #3498DB;"><i class="fa-solid fa-scale-balanced"></i></div>
+                <div class="insight-content"><h5>Precios (2021-2024)</h5><p>🔴 Presión en Precios (-49.2%)</p></div>
+            </div>
+            <div class="insight-box" style="border-left-color: #3498DB;">
+                <div class="insight-icon" style="color: #3498DB;"><i class="fa-solid fa-handshake"></i></div>
+                <div class="insight-content"><h5>Retención (2021-2024)</h5><p>🟢 Alta Fidelidad (52.1%)</p></div>
+            </div>
+            <div class="insight-box" style="border-left-color: #3498DB;">
+                <div class="insight-icon" style="color: #3498DB;"><i class="fa-solid fa-map-location-dot"></i></div>
+                <div class="insight-content"><h5>Top Región</h5><p>LIMA METROPOLITANA</p></div>
+            </div>
+        </div>
+
+        <div class="strategy-grid">
+            <div class="st-card" style="border-left-color: #3498DB;">
+                <div class="st-header" style="color: #3498DB;"><i class="fa-solid fa-lightbulb"></i> Insights & Estrategia</div>
+                <div class="st-content">
+                    <p><strong>Análisis:</strong> Impulsado por construcción y minería.</p>
+                    <ul><li>Servicio post-venta.</li><li>Proveeduría a minas.</li><li>Certificado de Origen.</li></ul>
+                </div>
+            </div>
+            <div class="ma-card">
+                <div class="ma-title"><i class="fa-solid fa-passport"></i> Acceso a Mercado</div>
+                <div class="ma-content">
+                    <ul>
+                        <li><i class="fa-solid fa-check"></i> <strong>Requisitos:</strong> Certificado de Origen. Normas DGNTI.</li>
+                        <li><i class="fa-solid fa-percent"></i> <strong>Aranceles:</strong> Plásticos, Maquinaria: 0%.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="comp-card">
+            <div class="comp-header"><i class="fa-solid fa-earth-americas"></i> Radar Competitivo: Top 3 Competidores en Panamá</div>
+            <div class="comp-grid">
+                
+        <div class="comp-item">
+            <div class="comp-flag">🇨🇳</div>
+            <div class="comp-name">China</div>
+            <div class="comp-desc">Líder en precio y variedad.</div>
+        </div>
+        
+        <div class="comp-item">
+            <div class="comp-flag">🇺🇸</div>
+            <div class="comp-name">Estados Unidos</div>
+            <div class="comp-desc">Maquinaria y tecnología.</div>
+        </div>
+        
+        <div class="comp-item">
+            <div class="comp-flag">🇨🇴</div>
+            <div class="comp-name">Colombia</div>
+            <div class="comp-desc">Materiales de construcción.</div>
+        </div>
+        
+            </div>
+        </div>
+
+        <div class="chart-card" style="margin-bottom: 30px; margin-top: 30px;">
+            <div class="chart-header"><div class="chart-title">Evolución 2021-2024: Valor vs Volumen</div></div>
+            <div id="chart_manufacturas_evol" style="height: 300px;"></div>
+        </div>
+
+        <div class="top-grid">
+            <div class="chart-card">
+                <div class="chart-header"><div class="chart-title">🏆 Top 20 Productos (2021-2024)</div></div>
+                <div class="table-container"><table><thead><tr><th class="rank-col">#</th><th>Producto</th><th>FOB</th></tr></thead><tbody><tr><td class='rank-col'>1</td><td>LAS DEMÁS PLACAS, LÁMINAS, HOJAS Y TIRAS DE POLÍME...</td><td>$13,340,503</td></tr><tr><td class='rank-col'>2</td><td>PREFORMAS...</td><td>$13,099,633</td></tr><tr><td class='rank-col'>3</td><td>LAS DEMÁS PLACAS, LÁMINAS, HOJAS Y TIRAS DE POLÍME...</td><td>$9,177,451</td></tr><tr><td class='rank-col'>4</td><td>PLACAS Y BALDOSAS, PARA PAVIMENTACIÓN O REVESTIMIE...</td><td>$8,273,428</td></tr><tr><td class='rank-col'>5</td><td>LOS DEMÁS LIBROS, FOLLETOS E IMPRESOS SIMILARES, I...</td><td>$6,486,086</td></tr><tr><td class='rank-col'>6</td><td>GRUPOS ELECTRÓGENOS PETROLEROS, DE CORRIENTE ALTER...</td><td>$6,449,360</td></tr><tr><td class='rank-col'>7</td><td>VAJILLA Y DEMÁS ARTÍCULOS PARA EL SERVICIO DE MESA...</td><td>$5,504,494</td></tr><tr><td class='rank-col'>8</td><td>DEMÁS ENVASES, INCLUIDAS LAS FUNDAS PARA DISCOS...</td><td>$5,380,040</td></tr><tr><td class='rank-col'>9</td><td>BARCOS CISTERNA DE REGISTRO SUPERIOR A 1.000 T...</td><td>$5,270,000</td></tr><tr><td class='rank-col'>10</td><td>PAPEL HIGIÉNICO, EN BOBINAS DE UNA ANCHURA <=36 CM...</td><td>$4,711,705</td></tr><tr><td class='rank-col'>11</td><td>LOS DEMÁS DESPERDICIOS DE ACEROS ALEADOS, EXCEPTO ...</td><td>$3,824,966</td></tr><tr><td class='rank-col'>12</td><td>CAJAS DE PAPEL O CARTÓN CORRUGADOS...</td><td>$3,556,935</td></tr><tr><td class='rank-col'>13</td><td>PARTES DE MÁQUINAS Y APARATOS DE LA PARTIDA NO 84....</td><td>$3,107,479</td></tr><tr><td class='rank-col'>14</td><td>LOS DEMÁS BANDEJAS, FUENTES, PLATOS, TAZAS, VASOS ...</td><td>$2,986,027</td></tr><tr><td class='rank-col'>15</td><td>LAS DEMÁS PARTES DE MÁQUINAS Y APARATOS DE LAS PAR...</td><td>$2,894,609</td></tr><tr><td class='rank-col'>16</td><td>LOS DEMÁS CALZADOS QUE CUBRAN EL TOBILLO CON PALMI...</td><td>$2,711,220</td></tr><tr><td class='rank-col'>17</td><td>LATAS PARA CERRAR POR SOLDADURA DE FUNDICIÓN DE HI...</td><td>$2,560,158</td></tr><tr><td class='rank-col'>18</td><td>MÁRMOL, TRAVERTINOS Y ALABASTRO, SIMPLEMENTE TALLA...</td><td>$2,534,031</td></tr><tr><td class='rank-col'>19</td><td>BANDAS DE RODADURA PARA NEUMÁTICOS PARA RECAUCHUTA...</td><td>$2,465,409</td></tr><tr><td class='rank-col'>20</td><td>SACOS, BOLSITAS Y CUCURUCHOS DE POLÍMEROS DE ETILE...</td><td>$2,353,220</td></tr></tbody></table></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><div class="chart-title">🏢 Top 20 Exportadores (2021-2024)</div></div>
+                <div class="table-container"><table><thead><tr><th class="rank-col">#</th><th>Empresa</th><th>FOB</th></tr></thead><tbody><tr><td class='rank-col'>1</td><td>EMUSA PERU S.A.C.</td><td>$18,151,747</td></tr><tr><td class='rank-col'>2</td><td>SAN MIGUEL INDUSTRIAS PET S.A.</td><td>$14,218,440</td></tr><tr><td class='rank-col'>3</td><td>MOTORES DIESEL ANDINOS S.A.- MODASA</td><td>$10,480,352</td></tr><tr><td class='rank-col'>4</td><td>CERAMICA LIMA S A</td><td>$7,575,933</td></tr><tr><td class='rank-col'>5</td><td>FABRICA DE ENVASES DE LATA LUX S A</td><td>$6,943,714</td></tr><tr><td class='rank-col'>6</td><td>SOFTYS PERU S.A.C.</td><td>$6,119,551</td></tr><tr><td class='rank-col'>7</td><td>TRANSGAS SHIPPING LINES SAC</td><td>$5,284,676</td></tr><tr><td class='rank-col'>8</td><td>GRAFICA BIBLOS SA</td><td>$4,108,116</td></tr><tr><td class='rank-col'>9</td><td>WELLCO PERUANA S.A.</td><td>$3,776,386</td></tr><tr><td class='rank-col'>10</td><td>TRUPAL S.A.</td><td>$3,757,117</td></tr><tr><td class='rank-col'>11</td><td>POLINPLAST S.A.C.</td><td>$3,683,047</td></tr><tr><td class='rank-col'>12</td><td>METALPREN S. A.</td><td>$3,293,810</td></tr><tr><td class='rank-col'>13</td><td>PRODUCTOS DE ACERO CASSADO SA PRODA</td><td>$3,254,370</td></tr><tr><td class='rank-col'>14</td><td>LAMINADOS S.A.C.</td><td>$3,003,802</td></tr><tr><td class='rank-col'>15</td><td>PERUPLAST S A</td><td>$2,919,115</td></tr><tr><td class='rank-col'>16</td><td>NEXA RESOURCES CAJAMARQUILLA S.A.</td><td>$2,615,103</td></tr><tr><td class='rank-col'>17</td><td>SOLPACK SOCIEDAD ANONIMA CERRADA - </td><td>$2,554,736</td></tr><tr><td class='rank-col'>18</td><td>QUAD/GRAPHICS PERU S.R.L.</td><td>$2,466,791</td></tr><tr><td class='rank-col'>19</td><td>TUBISA S.A.C.</td><td>$2,319,062</td></tr><tr><td class='rank-col'>20</td><td>EMPRESA SIDERURGICA DEL PERU S.A.A.</td><td>$2,172,097</td></tr></tbody></table></div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="chart-card">
+                <div class="chart-header"><div class="chart-title">🗺️ Top Regiones (2021-2024)</div></div>
+                <div class="table-container"><table><thead><tr><th class="rank-col">#</th><th>Departamento</th><th>FOB</th></tr></thead><tbody><tr><td class='rank-col'>1</td><td>LIMA METROPOLITANA</td><td>$170,111,786</td></tr><tr><td class='rank-col'>2</td><td>CALLAO</td><td>$15,170,559</td></tr><tr><td class='rank-col'>3</td><td>LIMA REGIÓN</td><td>$8,972,031</td></tr><tr><td class='rank-col'>4</td><td>ANCASH</td><td>$2,253,595</td></tr><tr><td class='rank-col'>5</td><td>AREQUIPA</td><td>$1,369,729</td></tr></tbody></table></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="quimicos" class="section">
+
+        
+    <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-icon" style="color:#9B59B6"><i class="fa-solid fa-sack-dollar"></i></div><div class="kpi-info"><h4>FOB Sector (2021-2024)</h4><h3>$62.8M</h3></div></div>
+        <div class="kpi-card"><div class="kpi-icon" style="color:#9B59B6"><i class="fa-solid fa-chart-line"></i></div><div class="kpi-info"><h4>CAGR (2021-2024)</h4><h3>11.4%</h3></div></div>
+        <div class="kpi-card"><div class="kpi-icon" style="color:#9B59B6"><i class="fa-solid fa-building"></i></div><div class="kpi-info"><h4>Empresas</h4><h3>143</h3></div></div>
+        <div class="kpi-card"><div class="kpi-icon" style="color:#9B59B6"><i class="fa-solid fa-boxes-stacked"></i></div><div class="kpi-info"><h4>Productos</h4><h3>184</h3></div></div>
+    </div>
+    
+
+        <div class="deep-dive-grid">
+            <div class="dd-card stars">
+                <div class="dd-icon" style="color: #FFD700;"><i class="fa-solid fa-star"></i></div>
+                <div class="dd-title">Empresas Estrella (>100k)</div>
+                <div class="dd-value">5 Cías.</div>
+                <ul class="dd-list"><li>CLARIANT (PERU) S.A. <span class='growth'>+5896%</span></li><li>UNIBELL S.A.C. <span class='growth'>+797%</span></li><li>ARIS INDUSTRIAL S.A. <span class='growth'>+250%</span></li><li>UNILENE S.A.C. <span class='growth'>+110%</span></li><li>E & M S.R.L. <span class='growth'>+100%</span></li></ul>
+            </div>
+            <div class="dd-card risk">
+                <div class="dd-icon" style="color: #FF416C;"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="dd-title">Concentración (CR3)</div>
+                <div class="dd-value">29.4%</div>
+                <ul class="dd-list"><li>Nivel: <strong>🟢 Saludable</strong></li><li>QUIMPAC S.A....</li><li>PLUS COSMETICA SOCIEDAD A...</li><li>DEUTSCHE PHARMA S.A.C....</li></ul>
+            </div>
+            <div class="dd-card churn">
+                <div class="dd-icon" style="color: #7F7FD5;"><i class="fa-solid fa-user-minus"></i></div>
+                <div class="dd-title">Fuga de Valor (2024)</div>
+                <div class="dd-value">-$2.9M</div>
+                <ul class="dd-list"><li>Empresas perdidas: <strong>27</strong></li><li>Valor perdido: <span class='loss'>$2.9M</span></li></ul>
+            </div>
+        </div>
+
+        <div class="insights-container">
+            <div class="insight-box" style="border-left-color: #9B59B6;">
+                <div class="insight-icon" style="color: #9B59B6;"><i class="fa-solid fa-scale-balanced"></i></div>
+                <div class="insight-content"><h5>Precios (2021-2024)</h5><p>🟢 Mejora de Precios (+53.7%)</p></div>
+            </div>
+            <div class="insight-box" style="border-left-color: #9B59B6;">
+                <div class="insight-icon" style="color: #9B59B6;"><i class="fa-solid fa-handshake"></i></div>
+                <div class="insight-content"><h5>Retención (2021-2024)</h5><p>🟢 Alta Fidelidad (59.0%)</p></div>
+            </div>
+            <div class="insight-box" style="border-left-color: #9B59B6;">
+                <div class="insight-icon" style="color: #9B59B6;"><i class="fa-solid fa-map-location-dot"></i></div>
+                <div class="insight-content"><h5>Top Región</h5><p>LIMA METROPOLITANA</p></div>
+            </div>
+        </div>
+
+        <div class="strategy-grid">
+            <div class="st-card" style="border-left-color: #9B59B6;">
+                <div class="st-header" style="color: #9B59B6;"><i class="fa-solid fa-lightbulb"></i> Insights & Estrategia</div>
+                <div class="st-content">
+                    <p><strong>Análisis:</strong> Auge cosmética natural y cuidado personal.</p>
+                    <ul><li>Ingredientes naturales.</li><li>Socio local para registros.</li></ul>
+                </div>
+            </div>
+            <div class="ma-card">
+                <div class="ma-title"><i class="fa-solid fa-passport"></i> Acceso a Mercado</div>
+                <div class="ma-content">
+                    <ul>
+                        <li><i class="fa-solid fa-check"></i> <strong>Requisitos:</strong> Registro Farmacia y Drogas (MINSA).</li>
+                        <li><i class="fa-solid fa-percent"></i> <strong>Aranceles:</strong> Farmacéuticos: 0%.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="comp-card">
+            <div class="comp-header"><i class="fa-solid fa-earth-americas"></i> Radar Competitivo: Top 3 Competidores en Panamá</div>
+            <div class="comp-grid">
+                
+        <div class="comp-item">
+            <div class="comp-flag">🇨🇴</div>
+            <div class="comp-name">Colombia</div>
+            <div class="comp-desc">Farmacéuticos y Cosméticos.</div>
+        </div>
+        
+        <div class="comp-item">
+            <div class="comp-flag">🇲🇽</div>
+            <div class="comp-name">México</div>
+            <div class="comp-desc">Precios competitivos en genéricos.</div>
+        </div>
+        
+        <div class="comp-item">
+            <div class="comp-flag">🇺🇸</div>
+            <div class="comp-name">Estados Unidos</div>
+            <div class="comp-desc">Medicamentos innovadores.</div>
+        </div>
+        
+            </div>
+        </div>
+
+        <div class="chart-card" style="margin-bottom: 30px; margin-top: 30px;">
+            <div class="chart-header"><div class="chart-title">Evolución 2021-2024: Valor vs Volumen</div></div>
+            <div id="chart_quimicos_evol" style="height: 300px;"></div>
+        </div>
+
+        <div class="top-grid">
+            <div class="chart-card">
+                <div class="chart-header"><div class="chart-title">🏆 Top 20 Productos (2021-2024)</div></div>
+                <div class="table-container"><table><thead><tr><th class="rank-col">#</th><th>Producto</th><th>FOB</th></tr></thead><tbody><tr><td class='rank-col'>1</td><td>LOS DEMÁS MEDICAMENTOS PARA USO HUMANO...</td><td>$9,593,114</td></tr><tr><td class='rank-col'>2</td><td>CLORO...</td><td>$5,170,911</td></tr><tr><td class='rank-col'>3</td><td>LOS DEMÁS MEDICAMENTOS PARA USO VETERINARIO...</td><td>$4,009,329</td></tr><tr><td class='rank-col'>4</td><td>NITRATO DE AMONIO PARA USO AGRÍCOLA...</td><td>$3,732,118</td></tr><tr><td class='rank-col'>5</td><td>LAS DEMÁS PREPARACIONES CAPILARES...</td><td>$3,475,165</td></tr><tr><td class='rank-col'>6</td><td>ESPARADRAPOS Y VENDITAS...</td><td>$3,124,807</td></tr><tr><td class='rank-col'>7</td><td>HIDRÓXIDO DE SODIO EN DISOLUCIÓN ACUOSA (LEJÍA DE ...</td><td>$2,781,150</td></tr><tr><td class='rank-col'>8</td><td>MEDICAMENTOS QUE CONTENGAN OTROS ANTIBIÓTICOS PARA...</td><td>$2,761,182</td></tr><tr><td class='rank-col'>9</td><td>DEMÁS MEDICAMENTOS PARA USO VETERINARIO QUE CONTEN...</td><td>$2,526,828</td></tr><tr><td class='rank-col'>10</td><td>LOS DEMÁS MEDICAMENTOS PARA USO HUMANO EXCEPTO PAR...</td><td>$2,058,496</td></tr><tr><td class='rank-col'>11</td><td>ÁCIDO SULFÚRICO...</td><td>$1,396,443</td></tr><tr><td class='rank-col'>12</td><td>PREPARACIONES PARA ONDULACIÓN O DESRIZADO PERMANEN...</td><td>$1,396,220</td></tr><tr><td class='rank-col'>13</td><td>PREPARACIONES ACONDICIONADAS PARA LA VENTA AL POR ...</td><td>$1,284,356</td></tr><tr><td class='rank-col'>14</td><td>CATGUTS ESTÉRILES Y LIGADURAS ESTÉRILES SIMILARES,...</td><td>$1,276,185</td></tr><tr><td class='rank-col'>15</td><td>LOS DEMÁS DESINFECTANTES PRESENTADOS EN FORMAS O E...</td><td>$1,271,769</td></tr><tr><td class='rank-col'>16</td><td>LAS DEMÁS PREPARACIONES PARA PERFUMAR O DESODORANT...</td><td>$1,070,644</td></tr><tr><td class='rank-col'>17</td><td>CHAMPÚES...</td><td>$995,241</td></tr><tr><td class='rank-col'>18</td><td>COLORANTES ORGÁNICOS SINTÉTICOS, PIGMENTARIOS Y PR...</td><td>$936,082</td></tr><tr><td class='rank-col'>19</td><td>ÁCIDOS ALQUILBENCENO SULFÓNICOS LINEALES Y SUS SAL...</td><td>$844,515</td></tr><tr><td class='rank-col'>20</td><td>SULFATO DE COBRE...</td><td>$824,839</td></tr></tbody></table></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><div class="chart-title">🏢 Top 20 Exportadores (2021-2024)</div></div>
+                <div class="table-container"><table><thead><tr><th class="rank-col">#</th><th>Empresa</th><th>FOB</th></tr></thead><tbody><tr><td class='rank-col'>1</td><td>QUIMPAC S.A.</td><td>$8,782,306</td></tr><tr><td class='rank-col'>2</td><td>PLUS COSMETICA SOCIEDAD ANONIMA - P</td><td>$5,081,913</td></tr><tr><td class='rank-col'>3</td><td>DEUTSCHE PHARMA S.A.C.</td><td>$4,637,337</td></tr><tr><td class='rank-col'>4</td><td>AGROVET MARKET S.A</td><td>$4,504,306</td></tr><tr><td class='rank-col'>5</td><td>ALICORP SAA</td><td>$4,460,947</td></tr><tr><td class='rank-col'>6</td><td>EXSA S A</td><td>$3,940,680</td></tr><tr><td class='rank-col'>7</td><td>3M PERU S A</td><td>$3,124,292</td></tr><tr><td class='rank-col'>8</td><td>LABORATORIOS BIOMONT S A</td><td>$2,632,512</td></tr><tr><td class='rank-col'>9</td><td>CIFARMA S.A.C.</td><td>$2,374,440</td></tr><tr><td class='rank-col'>10</td><td>HERSIL S.A.C. LABORATORIOS INDUSTRI</td><td>$2,170,219</td></tr><tr><td class='rank-col'>11</td><td>LABORATORIOS DROGAVET S.A.C.</td><td>$1,998,908</td></tr><tr><td class='rank-col'>12</td><td>ARIS INDUSTRIAL S.A.</td><td>$1,185,484</td></tr><tr><td class='rank-col'>13</td><td>SOUTHERN PERU COPPER CORPORATION, S</td><td>$1,166,384</td></tr><tr><td class='rank-col'>14</td><td>ROKER PERU SA</td><td>$1,085,150</td></tr><tr><td class='rank-col'>15</td><td>MONTANA S A</td><td>$982,565</td></tr><tr><td class='rank-col'>16</td><td>VITALINE SOCIEDAD ANONIMA CERRADA</td><td>$788,166</td></tr><tr><td class='rank-col'>17</td><td>LABORATORIOS PORTUGAL S R L</td><td>$783,352</td></tr><tr><td class='rank-col'>18</td><td>UNILENE S.A.C.</td><td>$685,360</td></tr><tr><td class='rank-col'>19</td><td>ZINC INDUSTRIAS NACIONALES S A</td><td>$640,003</td></tr><tr><td class='rank-col'>20</td><td>TAGUMEDICA S.A.</td><td>$627,724</td></tr></tbody></table></div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="chart-card">
+                <div class="chart-header"><div class="chart-title">🗺️ Top Regiones (2021-2024)</div></div>
+                <div class="table-container"><table><thead><tr><th class="rank-col">#</th><th>Departamento</th><th>FOB</th></tr></thead><tbody><tr><td class='rank-col'>1</td><td>LIMA METROPOLITANA</td><td>$38,511,409</td></tr><tr><td class='rank-col'>2</td><td>CALLAO</td><td>$15,269,974</td></tr><tr><td class='rank-col'>3</td><td>LA LIBERTAD</td><td>$3,732,118</td></tr><tr><td class='rank-col'>4</td><td>AREQUIPA</td><td>$1,850,971</td></tr><tr><td class='rank-col'>5</td><td>MOQUEGUA</td><td>$1,166,384</td></tr></tbody></table></div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="textiles" class="section">
+
+        
+    <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-icon" style="color:#E67E22"><i class="fa-solid fa-sack-dollar"></i></div><div class="kpi-info"><h4>FOB Sector (2021-2024)</h4><h3>$41.8M</h3></div></div>
+        <div class="kpi-card"><div class="kpi-icon" style="color:#E67E22"><i class="fa-solid fa-chart-line"></i></div><div class="kpi-info"><h4>CAGR (2021-2024)</h4><h3>-2.2%</h3></div></div>
+        <div class="kpi-card"><div class="kpi-icon" style="color:#E67E22"><i class="fa-solid fa-building"></i></div><div class="kpi-info"><h4>Empresas</h4><h3>229</h3></div></div>
+        <div class="kpi-card"><div class="kpi-icon" style="color:#E67E22"><i class="fa-solid fa-boxes-stacked"></i></div><div class="kpi-info"><h4>Productos</h4><h3>296</h3></div></div>
+    </div>
+    
+
+        <div class="deep-dive-grid">
+            <div class="dd-card stars">
+                <div class="dd-icon" style="color: #FFD700;"><i class="fa-solid fa-star"></i></div>
+                <div class="dd-title">Empresas Estrella (>100k)</div>
+                <div class="dd-value">5 Cías.</div>
+                <ul class="dd-list"><li>OZZY SA <span class='growth'>+775%</span></li><li>BADINOTTI PERU S.A. <span class='growth'>+178%</span></li><li>INDUSTRIA TEXTIL DEL PACIFICO S.A. <span class='growth'>+146%</span></li><li>FIBRAFIL S.A. <span class='growth'>+126%</span></li><li>COMERCIAL INDUSTRIAL DELTA S A CIDE <span class='growth'>+100%</span></li></ul>
+            </div>
+            <div class="dd-card risk">
+                <div class="dd-icon" style="color: #FF416C;"><i class="fa-solid fa-shield-halved"></i></div>
+                <div class="dd-title">Concentración (CR3)</div>
+                <div class="dd-value">44.5%</div>
+                <ul class="dd-list"><li>Nivel: <strong>🟢 Saludable</strong></li><li>VANITEX IMPORT & EXPORT S...</li><li>PRECOTEX S.A.C....</li><li>TEXGROUP S.A....</li></ul>
+            </div>
+            <div class="dd-card churn">
+                <div class="dd-icon" style="color: #7F7FD5;"><i class="fa-solid fa-user-minus"></i></div>
+                <div class="dd-title">Fuga de Valor (2024)</div>
+                <div class="dd-value">-$1.0M</div>
+                <ul class="dd-list"><li>Empresas perdidas: <strong>57</strong></li><li>Valor perdido: <span class='loss'>$1.0M</span></li></ul>
+            </div>
+        </div>
+
+        <div class="insights-container">
+            <div class="insight-box" style="border-left-color: #E67E22;">
+                <div class="insight-icon" style="color: #E67E22;"><i class="fa-solid fa-scale-balanced"></i></div>
+                <div class="insight-content"><h5>Precios (2021-2024)</h5><p>🟢 Mejora de Precios (+38.9%)</p></div>
+            </div>
+            <div class="insight-box" style="border-left-color: #E67E22;">
+                <div class="insight-icon" style="color: #E67E22;"><i class="fa-solid fa-handshake"></i></div>
+                <div class="insight-content"><h5>Retención (2021-2024)</h5><p>🟢 Alta Fidelidad (51.5%)</p></div>
+            </div>
+            <div class="insight-box" style="border-left-color: #E67E22;">
+                <div class="insight-icon" style="color: #E67E22;"><i class="fa-solid fa-map-location-dot"></i></div>
+                <div class="insight-content"><h5>Top Región</h5><p>LIMA METROPOLITANA</p></div>
+            </div>
+        </div>
+
+        <div class="strategy-grid">
+            <div class="st-card" style="border-left-color: #E67E22;">
+                <div class="st-header" style="color: #E67E22;"><i class="fa-solid fa-lightbulb"></i> Insights & Estrategia</div>
+                <div class="st-content">
+                    <p><strong>Análisis:</strong> Competencia fuerte en precio. Nicho es calidad.</p>
+                    <ul><li>Posicionamiento Lujo (Pima).</li><li>Full package.</li><li>Moda sostenible.</li></ul>
+                </div>
+            </div>
+            <div class="ma-card">
+                <div class="ma-title"><i class="fa-solid fa-passport"></i> Acceso a Mercado</div>
+                <div class="ma-content">
+                    <ul>
+                        <li><i class="fa-solid fa-check"></i> <strong>Requisitos:</strong> Etiquetado (Composición, Origen).</li>
+                        <li><i class="fa-solid fa-percent"></i> <strong>Aranceles:</strong> Prendas: 0% (Regla de Origen).</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="comp-card">
+            <div class="comp-header"><i class="fa-solid fa-earth-americas"></i> Radar Competitivo: Top 3 Competidores en Panamá</div>
+            <div class="comp-grid">
+                
+        <div class="comp-item">
+            <div class="comp-flag">🇨🇳</div>
+            <div class="comp-name">China</div>
+            <div class="comp-desc">Volumen y precio imbatible.</div>
+        </div>
+        
+        <div class="comp-item">
+            <div class="comp-flag">🇨🇴</div>
+            <div class="comp-name">Colombia</div>
+            <div class="comp-desc">Moda, diseño y marcas regionales.</div>
+        </div>
+        
+        <div class="comp-item">
+            <div class="comp-flag">🇺🇸</div>
+            <div class="comp-name">Estados Unidos</div>
+            <div class="comp-desc">Marcas globales.</div>
+        </div>
+        
+            </div>
+        </div>
+
+        <div class="chart-card" style="margin-bottom: 30px; margin-top: 30px;">
+            <div class="chart-header"><div class="chart-title">Evolución 2021-2024: Valor vs Volumen</div></div>
+            <div id="chart_textiles_evol" style="height: 300px;"></div>
+        </div>
+
+        <div class="top-grid">
+            <div class="chart-card">
+                <div class="chart-header"><div class="chart-title">🏆 Top 20 Productos (2021-2024)</div></div>
+                <div class="table-container"><table><thead><tr><th class="rank-col">#</th><th>Producto</th><th>FOB</th></tr></thead><tbody><tr><td class='rank-col'>1</td><td>LOS DEMÁS TEJIDOS DE PUNTO DE FIBRAS SINTÉTICAS CR...</td><td>$6,747,434</td></tr><tr><td class='rank-col'>2</td><td>LOS DEMÁS T-SHIRTS DE ALGODÓN, PARA HOMBRES O MUJE...</td><td>$6,547,167</td></tr><tr><td class='rank-col'>3</td><td>CAMISAS DE PUNTO ALGODÓN CON CUELLO Y ABERTURA DEL...</td><td>$4,357,098</td></tr><tr><td class='rank-col'>4</td><td>T-SHIRT DE ALGODÓN PARA HOMBRES O MUJERES, DE TEJI...</td><td>$2,225,030</td></tr><tr><td class='rank-col'>5</td><td>LOS DEMÁS TEJIDOS DE PUNTO DE FIBRAS SINTÉTICAS TE...</td><td>$2,196,947</td></tr><tr><td class='rank-col'>6</td><td>CAMISAS DE PUNTO ALGODÓN ABERTURA DELANTERA PARCIA...</td><td>$1,887,171</td></tr><tr><td class='rank-col'>7</td><td>LOS DEMÁS T-SHIRTS DE ALGODÓN, PARA NIÑOS O NIÑAS...</td><td>$1,310,274</td></tr><tr><td class='rank-col'>8</td><td>LAS DEMÁS CAMISAS DE PUNTO ALGODÓN CON CUELLO Y AB...</td><td>$1,141,086</td></tr><tr><td class='rank-col'>9</td><td>REDES CONFECCIONADAS PARA LA PESCA DE MATERIAL TEX...</td><td>$1,105,084</td></tr><tr><td class='rank-col'>10</td><td>CAMISAS PARA HOMBRES O NIÑOS, DE ALGODÓN...</td><td>$1,032,083</td></tr><tr><td class='rank-col'>11</td><td>LAS DEMÁS CAMISAS DE PUNTO ALGODÓN ABERTURA DELANT...</td><td>$972,591</td></tr><tr><td class='rank-col'>12</td><td>LOS DEMÁS FIBRAS SINTÉTICAS DISCONTINUAS, SIN CARD...</td><td>$887,228</td></tr><tr><td class='rank-col'>13</td><td>CAMISAS DE PUNTO DE LAS DEMÁS FIBRAS SINTÉTICAS O ...</td><td>$678,398</td></tr><tr><td class='rank-col'>14</td><td>LAS DEMÁS TELAS SIN TEJER DE FILAMENTOS SINTÉTICOS...</td><td>$650,577</td></tr><tr><td class='rank-col'>15</td><td>T-SHIRTS Y CAMISETAS INTERIORES DE PUNTO DE LAS DE...</td><td>$515,945</td></tr><tr><td class='rank-col'>16</td><td>PRENDAS Y COMPLEMENTOS DE VESTIR DE PUNTO PARA BEB...</td><td>$476,157</td></tr><tr><td class='rank-col'>17</td><td>VESTIDOS DE PUNTO PARA MUJERES O NIÑAS, DE ALGODÓN...</td><td>$426,558</td></tr><tr><td class='rank-col'>18</td><td>LAS DEMÁS TELAS SIN TEJER DE FILAMENTOS SINTÉTICOS...</td><td>$403,346</td></tr><tr><td class='rank-col'>19</td><td>T-SHIRT DE ALGODÓN PARA NIÑOS O NIÑAS, DE TEJIDOS ...</td><td>$402,336</td></tr><tr><td class='rank-col'>20</td><td>LOS DEMÁS TEJIDOS DE PUNTO DE ALGODÓN TEÑIDOS...</td><td>$385,818</td></tr></tbody></table></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><div class="chart-title">🏢 Top 20 Exportadores (2021-2024)</div></div>
+                <div class="table-container"><table><thead><tr><th class="rank-col">#</th><th>Empresa</th><th>FOB</th></tr></thead><tbody><tr><td class='rank-col'>1</td><td>VANITEX IMPORT & EXPORT S.A.C.</td><td>$9,351,577</td></tr><tr><td class='rank-col'>2</td><td>PRECOTEX S.A.C.</td><td>$5,764,759</td></tr><tr><td class='rank-col'>3</td><td>TEXGROUP S.A.</td><td>$3,472,408</td></tr><tr><td class='rank-col'>4</td><td>COTTON KNIT S.A.C.</td><td>$2,692,522</td></tr><tr><td class='rank-col'>5</td><td>SOUTHERN TEXTILE NETWORK S.A.C.</td><td>$1,851,732</td></tr><tr><td class='rank-col'>6</td><td>FRANKY Y RICKY S.A.</td><td>$1,692,104</td></tr><tr><td class='rank-col'>7</td><td>INDUSTRIAS NETTALCO S.A.</td><td>$1,103,611</td></tr><tr><td class='rank-col'>8</td><td>SUDAMERICANA DE FIBRAS S.A.</td><td>$946,932</td></tr><tr><td class='rank-col'>9</td><td>CREDITEX S.A.A.</td><td>$916,174</td></tr><tr><td class='rank-col'>10</td><td>TUBERIAS Y GEOSISTEMAS DEL PERU SA </td><td>$768,666</td></tr><tr><td class='rank-col'>11</td><td>BADINOTTI PERU S.A.</td><td>$762,794</td></tr><tr><td class='rank-col'>12</td><td>TEXTIL DEL VALLE SOCIEDAD ANONIMA D</td><td>$670,893</td></tr><tr><td class='rank-col'>13</td><td>INDUSTRIA TEXTIL DEL PACIFICO S.A.</td><td>$663,617</td></tr><tr><td class='rank-col'>14</td><td>ELVA EXPORT S.A.C.</td><td>$653,469</td></tr><tr><td class='rank-col'>15</td><td>FIBRAS MARINAS SA</td><td>$633,285</td></tr><tr><td class='rank-col'>16</td><td>FIBRAFIL S.A.</td><td>$595,516</td></tr><tr><td class='rank-col'>17</td><td>FLOARTE TEXTIL SOCIEDAD ANONIMA CER</td><td>$555,144</td></tr><tr><td class='rank-col'>18</td><td>D´ CLASS COMPANY S.A.C.</td><td>$508,309</td></tr><tr><td class='rank-col'>19</td><td>OZZY SA</td><td>$461,235</td></tr><tr><td class='rank-col'>20</td><td>PERUVIAN COTTON FASHION SOCIEDAD AN</td><td>$416,557</td></tr></tbody></table></div>
+            </div>
+        </div>
+
+        <div class="grid-2">
+            <div class="chart-card">
+                <div class="chart-header"><div class="chart-title">🗺️ Top Regiones (2021-2024)</div></div>
+                <div class="table-container"><table><thead><tr><th class="rank-col">#</th><th>Departamento</th><th>FOB</th></tr></thead><tbody><tr><td class='rank-col'>1</td><td>LIMA METROPOLITANA</td><td>$34,159,193</td></tr><tr><td class='rank-col'>2</td><td>CALLAO</td><td>$2,913,525</td></tr><tr><td class='rank-col'>3</td><td>ICA</td><td>$2,535,607</td></tr><tr><td class='rank-col'>4</td><td>AREQUIPA</td><td>$2,024,784</td></tr><tr><td class='rank-col'>5</td><td>LIMA REGIÓN</td><td>$104,334</td></tr></tbody></table></div>
+            </div>
+        </div>
+    </div>
+    
+
+        <!-- GLOSARIO -->
+        <div id="glosario" class="section">
+            <div class="conclusions-hero" style="background: linear-gradient(135deg, #2B3674 0%, #4a5a9e 100%);">
+                <h3>📚 Glosario Técnico</h3>
+                <p>Definiciones clave para interpretar las métricas de este dashboard.</p>
+            </div>
+            <div class="glossary-grid">
+                <div class="glossary-card">
+                    <div class="gl-term">Empresas Estrellas <i class="fa-solid fa-star"></i></div>
+                    <div class="gl-def">Empresas con un volumen de exportación relevante (>$100,000 USD) que han mostrado un crecimiento acelerado (>30%) en el último año.</div>
+                    <div class="gl-ex"><strong>Ejemplo:</strong> Una empresa que exportó $150k en 2023 y $250k en 2024 (+66%) es una "Estrella" porque crece rápido sobre una base sólida.</div>
+                </div>
+                <div class="glossary-card">
+                    <div class="gl-term">CAGR <i class="fa-solid fa-chart-line"></i></div>
+                    <div class="gl-def">"Compound Annual Growth Rate" (Tasa de Crecimiento Anual Compuesto). Mide la tasa de retorno de una inversión durante un período de tiempo, como si hubiera crecido a un ritmo constante.</div>
+                    <div class="gl-ex"><strong>Ejemplo:</strong> Si exportamos $100 en 2021 y $150 en 2024, el CAGR nos dice cuánto crecimos "cada año" en promedio para llegar a esa cifra.</div>
+                </div>
+                <div class="glossary-card">
+                    <div class="gl-term">FOB <i class="fa-solid fa-ship"></i></div>
+                    <div class="gl-def">"Free On Board" (Libre a Bordo). Valor de la mercancía puesta en el puerto de embarque en Perú. No incluye flete internacional ni seguros.</div>
+                    <div class="gl-ex"><strong>Ejemplo:</strong> El valor de un contenedor de uvas puesto en el puerto del Callao, antes de zarpar hacia Panamá.</div>
+                </div>
+                <div class="glossary-card">
+                    <div class="gl-term">HS Code <i class="fa-solid fa-barcode"></i></div>
+                    <div class="gl-def">"Harmonized System" (Sistema Armonizado). Código numérico internacional para clasificar productos. Los primeros 2 dígitos son el Capítulo, 4 la Partida, 6 la Subpartida.</div>
+                    <div class="gl-ex"><strong>Ejemplo:</strong> HS 08 (Frutas) -> HS 0806 (Uvas) -> HS 0806.10 (Uvas Frescas).</div>
+                </div>
+                <div class="glossary-card">
+                    <div class="gl-term">CR3 <i class="fa-solid fa-chart-pie"></i></div>
+                    <div class="gl-def">"Concentration Ratio 3". Porcentaje de participación de mercado que poseen las 3 empresas más grandes de un sector. Mide el riesgo de concentración.</div>
+                    <div class="gl-ex"><strong>Ejemplo:</strong> Si el CR3 es 80%, significa que solo 3 empresas controlan el 80% de todo lo que exportamos en ese sector.</div>
+                </div>
+                <div class="glossary-card">
+                    <div class="gl-term">Churn Rate <i class="fa-solid fa-user-minus"></i></div>
+                    <div class="gl-def">Tasa de Fuga o Deserción. Porcentaje de empresas que exportaron en un año anterior pero dejaron de hacerlo en el año actual.</div>
+                    <div class="gl-ex"><strong>Ejemplo:</strong> Empresas que vendieron a Panamá en 2023 pero no registraron ninguna venta en 2024.</div>
+                </div>
+                <div class="glossary-card">
+                    <div class="gl-term">TLC <i class="fa-solid fa-handshake"></i></div>
+                    <div class="gl-def">Tratado de Libre Comercio. Acuerdo comercial vinculante que reduce o elimina aranceles entre países.</div>
+                    <div class="gl-ex"><strong>Ejemplo:</strong> El TLC Perú-Panamá permite que nuestras uvas entren con 0% de arancel, dándonos ventaja sobre países sin tratado.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONCLUSIONES MAESTRAS -->
+        <div id="conclusiones" class="section">
+            <div class="conclusions-hero">
+                <h3>🎯 Conclusiones Maestras (2021-2024)</h3>
+                <p>Análisis estratégico de alto nivel basado en la intersección de datos de valor, volumen, retención y origen.</p>
+            </div>
+            <div class="conclusions-grid">
+                <div class="conclusion-card">
+                    <div class="cc-icon"><i class="fa-solid fa-arrow-trend-up"></i></div>
+                    <div class="cc-title">1. Polarización del Valor</div>
+                    <div class="cc-text">Mientras el Agro Fresco ha logrado desacoplarse del volumen (+Valor/+Precio), sectores como Textiles enfrentan una trampa de commoditización (-Precio). La estrategia país debe bifurcarse: Branding para Textiles, Eficiencia para Manufacturas.</div>
+                    <div class="cc-highlight">Acción: Proteger este estatus con certificaciones de sostenibilidad (Global GAP).</div>
+                </div>
+                <div class="conclusion-card">
+                    <div class="cc-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <div class="cc-title">2. Vulnerabilidad Estructural (CR3)</div>
+                    <div class="cc-text">El 70% del éxito exportador descansa en menos de 15 empresas corporativas. Esta 'Pareto Extrema' es un riesgo sistémico. Si una de estas empresas cambia de proveedor, el sector se desploma. Urge desarrollar una 'Clase Media Exportadora'.</div>
+                    <div class="cc-highlight">Acción: Urge diversificar la base exportadora con PyMEs competitivas.</div>
+                </div>
+                <div class="conclusion-card">
+                    <div class="cc-icon"><i class="fa-solid fa-industry"></i></div>
+                    <div class="cc-title">3. El Hub Logístico Subutilizado</div>
+                    <div class="cc-text">Panamá compra mucho insumo intermedio (Manufacturas) pero poco producto final de consumo masivo peruano. Estamos alimentando su industria, no a su consumidor. La oportunidad está en marcas propias en retail.</div>
+                    <div class="cc-highlight">Acción: Fomentar la exportación de marcas propias en acabados y decoración.</div>
+                </div>
+                <div class="conclusion-card">
+                    <div class="cc-icon"><i class="fa-solid fa-rotate"></i></div>
+                    <div class="cc-title">4. La Brecha de Retención</div>
+                    <div class="cc-text">Perdemos el 40% de los exportadores cada año (Churn). El problema no es la promoción comercial (atraer), sino la competitividad logística y financiera (retener). El 'Soft Landing' es más crítico que las ferias.</div>
+                    <div class="cc-highlight">Acción: Programas de "Soft Landing" y consolidación logística para PyMEs.</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function showSection(id, element) {
+            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+            element.classList.add('active');
+            window.dispatchEvent(new Event('resize'));
+        }
+
+        const config = {responsive: true, displayModeBar: false};
+        const layout_base = { autosize: true, height: 320, margin: {t: 10, b: 30, l: 40, r: 10}, paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)', font: {family: 'Inter, sans-serif', color: '#666'}, xaxis: {showgrid: false}, yaxis: {showgrid: true, gridcolor: '#f0f0f0'} };
+
+        Plotly.newPlot('chart_evolucion', [{x: [2021, 2022, 2023, 2024], y: [554152558.11, 606718083.74, 617802446.95, 610690962.02], type: 'scatter', mode: 'lines+markers', fill: 'tozeroy', line: {color: '#D91023', width: 3, shape: 'spline'}, marker: {size: 8, color: '#0F2130'}}], layout_base, config);
+        Plotly.newPlot('chart_sectores', [{labels: ['Combustibles', 'Manufacturas', 'Agro Fresco', 'Agro Procesado', 'Químicos', 'Textiles', 'Pescados y Mariscos', 'Otros'], values: [1791522739.3799999, 199312743.18, 171386408.57, 90142768.59, 62831976.6, 41818135.25, 32323410.84, 25868.41], type: 'pie', hole: 0.6, marker: {colors: ['#27AE60', '#F39C12', '#0077be', '#3498DB', '#9B59B6', '#E67E22', '#95a5a6']}, textinfo: 'percent', hoverinfo: 'label+value+percent'}], {...layout_base, showlegend: true, legend: {orientation: 'h', y: -0.1}}, config);
+
+        function createDualChart(divId, x, yVal, yVol, color) {
+            var trace1 = {x: x, y: yVol, name: 'Volumen (Kg)', type: 'bar', marker: {color: '#E0E0E0'}, opacity: 0.7};
+            var trace2 = {x: x, y: yVal, name: 'Valor (USD)', type: 'scatter', mode: 'lines+markers', yaxis: 'y2', line: {color: color, width: 3}};
+            var layout = { height: 300, margin: {t: 30, b: 30, l: 50, r: 50}, showlegend: true, legend: {orientation: 'h', y: 1.1}, xaxis: {showgrid: false}, yaxis: {title: 'Kg', showgrid: false, showticklabels: false}, yaxis2: {title: 'USD', overlaying: 'y', side: 'right', showgrid: true, gridcolor: '#f0f0f0'} };
+            Plotly.newPlot(divId, [trace1, trace2], layout, config);
+        }
+
+        createDualChart('chart_frescos_evol', [2021, 2022, 2023, 2024], [45872619.23, 45589714.24, 39879860.99, 40044214.11], [51094572.477000006, 51522598.755, 32796657.593000002, 29649705.297000002], '#27AE60');
+createDualChart('chart_procesados_evol', [2021, 2022, 2023, 2024], [17921746.79, 18845378.35, 23754206.76, 29621436.69], [15122286.634, 10909702.981, 13678230.7, 17722272.844], '#F39C12');
+createDualChart('chart_pesca_evol', [2021, 2022, 2023, 2024], [7995580.3, 7627800.58, 6686912.51, 10013117.45], [3350087.768, 3399733.972, 2736128.58, 4033407.04], '#0077be');
+createDualChart('chart_manufacturas_evol', [2021, 2022, 2023, 2024], [42550094.33, 53579098.51, 50358881.42, 52824668.92], [20852135.283, 24910586.423, 25198551.676, 50909962.72], '#3498DB');
+createDualChart('chart_quimicos_evol', [2021, 2022, 2023, 2024], [11232587.29, 20165980.12, 15904516.8, 15528892.39], [11782444.078, 17261978.112, 8878300.145, 10596928.843], '#9B59B6');
+createDualChart('chart_textiles_evol', [2021, 2022, 2023, 2024], [8907703.04, 14600937.56, 9988979.56, 8320515.09], [799922.205, 1273642.316, 701271.14, 537821.596], '#E67E22');
+
+    </script>
+</body>
+</html>
